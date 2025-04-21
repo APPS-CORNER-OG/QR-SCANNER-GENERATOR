@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner & Generator</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center mt-4">
+            <div class="col-12">
+                <!-- Theme Toggle and Navigation -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">QR Code Tool</h2>
+                    <button class="btn btn-outline-secondary" id="theme-toggle">
+                        <i class="bi bi-moon-fill dark-icon"></i>
+                        <i class="bi bi-sun-fill light-icon d-none"></i>
+                        <span class="ms-2 theme-text">Light Mode</span>
+                    </button>
+                </div>
+
+                <!-- Tabs for switching between Scanner and Generator -->
+                <ul class="nav nav-pills nav-fill mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#scanner-tab">
+                            <i class="bi bi-camera"></i> Scanner
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#generator-tab">
+                            <i class="bi bi-qr-code"></i> Generator
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Scanner Tab -->
+                    <div class="tab-pane fade show active" id="scanner-tab">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-dark">
+                                <h3 class="card-title mb-0">QR Code Scanner</h3>
+                                <button id="switch-camera-btn" class="btn btn-outline-light btn-sm">
+                                    <i class="bi bi-camera"></i> Switch Camera
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="camera-container" class="mb-3">
+                                    <video id="video" playsinline></video>
+                                    <canvas id="canvas" class="d-none"></canvas>
+                                    <div id="loadingIndicator" class="loading-indicator d-none">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                    <div id="scanning-overlay" class="scanning-overlay d-none">
+                                        <div class="scanning-line"></div>
+                                    </div>
+                                </div>
+
+                                <div id="result-container" class="d-none">
+                                    <div class="alert alert-success">
+                                        <h5 class="alert-heading">QR Code Detected!</h5>
+                                        <p id="result-text" class="mb-0"></p>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button id="copy-btn" class="btn btn-secondary">
+                                            <i class="bi bi-clipboard"></i> Copy
+                                        </button>
+                                        <button id="share-btn" class="btn btn-secondary">
+                                            <i class="bi bi-share"></i> Share
+                                        </button>
+                                        <button id="scan-again-btn" class="btn btn-primary">
+                                            <i class="bi bi-camera"></i> Scan Again
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="error-container" class="d-none">
+                                    <div class="alert alert-danger">
+                                        <h5 class="alert-heading">Error</h5>
+                                        <p id="error-text" class="mb-0"></p>
+                                    </div>
+                                    <button id="retry-btn" class="btn btn-primary">
+                                        <i class="bi bi-arrow-clockwise"></i> Retry
+                                    </button>
+                                </div>
+
+                                <!-- Scan History Section -->
+                                <div class="mt-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="mb-0">Scan History</h4>
+                                        <button id="refresh-history-btn" class="btn btn-outline-secondary btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                                        </button>
+                                    </div>
+                                    <div id="history-list" class="list-group"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generator Tab -->
+                    <div class="tab-pane fade" id="generator-tab">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-dark">
+                                <h3 class="card-title mb-0">QR Code Generator</h3>
+                            </div>
+                            <div class="card-body">
+                                <form id="qr-generator-form">
+                                    <div class="mb-3">
+                                        <label for="qr-text" class="form-label">Text or URL</label>
+                                        <textarea id="qr-text" class="form-control" rows="3" required></textarea>
+                                    </div>
+
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Foreground Color</label>
+                                            <div class="input-group">
+                                                <input type="color" class="form-control form-control-color" id="qr-color" value="#000000">
+                                                <input type="text" class="form-control" id="qr-color-text" value="#000000">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Background Color</label>
+                                            <div class="input-group">
+                                                <input type="color" class="form-control form-control-color" id="qr-bg-color" value="#ffffff">
+                                                <input type="text" class="form-control" id="qr-bg-color-text" value="#ffffff">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Logo (optional)</label>
+                                        <input type="file" class="form-control" id="qr-logo" accept="image/*">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Animation Style</label>
+                                        <select class="form-select" id="qr-animation">
+                                            <option value="none">None</option>
+                                            <option value="fade">Fade In</option>
+                                            <option value="scale">Scale Up</option>
+                                            <option value="rotate">Rotate</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-qr-code"></i> Generate QR Code
+                                    </button>
+                                </form>
+
+                                <div id="qr-result" class="mt-4 text-center d-none">
+                                    <div class="card bg-dark">
+                                        <div class="card-body">
+                                            <div id="qr-preview"></div>
+                                            <button id="download-qr" class="btn btn-success mt-3">
+                                                <i class="bi bi-download"></i> Download QR Code
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/generator.js') }}"></script>
+</body>
+</html>
